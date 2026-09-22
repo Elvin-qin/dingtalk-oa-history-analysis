@@ -1,6 +1,6 @@
 # DingTalk OA History Analysis
 
-一个可分享的 Codex Skill：自动准备钉钉 DWS 环境，只让用户完成必要的钉钉登录，然后把本人发起、处理过或收到抄送的历史 OA 审批分类统计并导出为 XLSX。
+一个可分享的 Codex Skill：自动准备钉钉 DWS 环境，只让用户完成必要的钉钉登录，然后把本人发起、处理过或收到抄送的历史 OA 审批分类统计并导出为 XLSX；需要时还能下载审批附件，供 Codex 查找其中的文字和数据。
 
 macOS 是主要验证环境，Windows 使用同一套 Node.js 脚本。仓库不包含作者的钉钉账号、Token、审批数据或其他私人文件。
 
@@ -54,6 +54,14 @@ node "C:\skill\dingtalk-oa-history-analysis\scripts\run.mjs"
 node scripts/run.mjs --from 2025-01-01 --to 2025-12-31 --roles executed --out "/path/to/archive"
 ```
 
+需要下载附件或读取附件内容时：
+
+```bash
+node scripts/run.mjs --attachments
+```
+
+附件保存在归档目录的 `attachments/审批类型/审批实例ID/` 下，`attachments.json` 记录文件名、本地路径、大小、SHA-256 和失败原因。Excel 会增加附件数量、下载状态、本地路径以及“附件汇总”Sheet。
+
 同一输出目录发生中断时，原命令重跑即可自动续传。
 
 ## 输出
@@ -62,6 +70,8 @@ node scripts/run.mjs --from 2025-01-01 --to 2025-12-31 --roles executed --out "/
 - `approvals.json`：去重后的结构化审批数据。
 - `manifest.json`：查询身份、范围、分页和完整性记录。
 - `raw/`：可核查、可恢复的原始响应。
+- `attachments/`：按审批类型与审批实例整理的原始附件。
+- `attachments.json`：附件索引、完整性和失败记录。
 
 审批同意、拒绝、撤销、转交，以及日历或提醒同步不在这个 Skill 的范围内。
 

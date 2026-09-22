@@ -43,7 +43,7 @@ function asFields(detail) {
   return fields;
 }
 export function workbookModel(entries,manifest) {
-  const used=new Set(["总览","全部审批索引","抓取异常"]);
+  const used=new Set(["总览","全部审批索引","附件汇总","抓取异常"]);
   const grouped=new Map();
   const rows=entries.map(entry=>{
     const list=entry.listItem||{},d=entry.detail||{};
@@ -59,6 +59,7 @@ export function workbookModel(entries,manifest) {
       result:text(d.processInstanceResult),business:text(d.businessId),code:text(d.processCode),
       created:excelLocalDate(d.createTime||list.processCreateTime),finished:excelLocalDate(d.finishTime||list.processEndTime),
       url:text(list.url||list.pcUrl),fields:asFields(d),
+      attachments:entry.attachments||[],
       operations:json(d.operationRecords||d._supplementalRecords||[]),tasks:json(d.tasks||d._supplementalTasks||[]),
       raw:json(d),sources:json(entry.sourceItems||{}),rawPath:entry.detailFile||"",
       summary:text(list.formMassage).replace(/<br\s*\/?>/gi,"\n")
@@ -75,13 +76,18 @@ export function workbookModel(entries,manifest) {
     "查询范围："+(scope.from||"")+" 至 "+(scope.to||"")+"；时间：Asia/Shanghai",
     "唯一实例："+rows.length+"；抓取完整："+Boolean(manifest.complete)+"；详情失败："+(manifest.failures?.length||0),
     "来源数量存在角色重叠。按模板代码分类，名称用于显示；不同模板同名时自动加后缀。",
-    "完整内容保留在各分类页的 JSON 列，长文本拆成连续列，不截断。附件仅保留元数据和链接。",
+    manifest.attachments?.requested?`附件：发现 ${manifest.attachments.total||0} 个，已下载 ${manifest.attachments.downloaded||0} 个，失败 ${manifest.attachments.failed||0} 个。`:
+      "附件仅保留表单元数据；需要本地文件或读取附件内容时使用附件下载模式。",
     "来源：DingTalk OA / DWS；抓取完成时间："+(manifest.finishedAt||manifest.startedAt||"")
   ]});
-  const baseHeaders=["审批实例ID","来源角色","状态","审批结果","标题","发起人","发起部门","发起时间","完成时间","业务编号","模板代码","钉钉链接"];
-  const base=r=>[r.instance,r.source,r.status,r.result,r.title,r.originator,r.department,r.created,r.finished,r.business,r.code,r.url];
-  const widths=[36,20,12,12,42,14,28,22,22,24,40,40];
+  const baseHeaders=["审批实例ID","来源角色","状态","审批结果","标题","发起人","发起部门","发起时间","完成时间","业务编号","模板代码","钉钉链接","附件数","附件下载状态","附件名称","附件本地路径"];
+  const base=r=>[r.instance,r.source,r.status,r.result,r.title,r.originator,r.department,r.created,r.finished,r.business,r.code,r.url,r.attachments.length,
+    r.attachments.length?(r.attachments.every(v=>v.status==="downloaded")?"已下载":r.attachments.some(v=>v.status==="failed")?"部分失败":"仅元数据"):"无附件",
+    r.attachments.map(v=>v.fileName).join("\n"),r.attachments.map(v=>v.localPath||"").filter(Boolean).join("\n")];
+  const widths=[36,20,12,12,42,14,28,22,22,24,40,40,10,14,36,55];
   sheets.push({name:"全部审批索引",headers:["审批类型",...baseHeaders],rows:rows.map(r=>[r.category,...base(r)]),widths:[32,...widths],dates:[8,9]});
+  const attachmentRows=rows.flatMap(r=>r.attachments.map(v=>[r.category,r.instance,r.title,v.fieldName||"",v.fileName||"",v.fileType||"",v.fileSize??v.sizeBytes??"",v.status||"仅元数据",v.localPath||"",v.error?.message||""]));
+  if(attachmentRows.length)sheets.push({name:"附件汇总",headers:["审批类型","审批实例ID","审批标题","来源字段","附件名称","文件类型","文件大小（字节）","下载状态","本地路径","失败原因"],rows:attachmentRows,widths:[28,36,42,24,38,12,18,14,60,48]});
   for(const g of groups) {
     const names=[...new Set(g.rows.flatMap(r=>Object.keys(r.fields)))];
     const slots=[...names.map(key=>({key:"字段："+key,read:r=>r.fields[key]||""})),

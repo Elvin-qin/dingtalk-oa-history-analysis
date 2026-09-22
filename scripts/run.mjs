@@ -8,6 +8,7 @@ import {args,callDws,checkedPayload,locateDws,readJson,runtimeDirectory,run,toda
 import {exportArchive} from "./export-oa-history.mjs";
 import {buildArchive} from "./build-workbook.mjs";
 import {validateArchive} from "./validate-export.mjs";
+import {downloadAttachments} from "./download-attachments.mjs";
 
 const DWS_VERSION="1.0.62";
 const EXCELJS_VERSION="4.4.0";
@@ -20,10 +21,12 @@ function help(){
 Usage:
   node scripts/run.mjs [--out DIR] [--from YYYY-MM-DD] [--to YYYY-MM-DD]
                        [--roles submitted,executed,cc] [--profile corp:user]
-                       [--runtime DIR] [--dws FILE] [--device] [--skip-install]
+                       [--attachments] [--runtime DIR] [--dws FILE]
+                       [--device] [--skip-install]
 
 The command installs missing DWS/ExcelJS dependencies, starts OAuth login only
-when needed, exports approvals, builds XLSX, and validates the result.`);
+when needed, exports approvals, optionally downloads attachments, builds XLSX,
+and validates the result.`);
 }
 
 function shanghaiTimestamp(date=new Date()){
@@ -144,15 +147,21 @@ export async function oneCommandExport(options){
   };
   const manifest=await exportArchive(exportOptions);
   if(!manifest.complete)throw Error("审批归档未完整，已保留输出目录供下次自动续传: "+out);
+  const wantAttachments=Boolean(options.attachments||saved?.attachments?.requested);
+  const attachmentSummary=wantAttachments?await downloadAttachments({
+    dir:out,command,profile:account.profile,
+    maxFileBytes:options["max-attachment-bytes"],maxTotalBytes:options["max-total-attachment-bytes"]
+  }):null;
   const workbook=await buildArchive({dir:out,engine:"exceljs",modules:path.join(runtime,"node_modules")});
   const validation=await validateArchive(out);
   if(validation.errors.length)throw Error("导出校验失败: "+validation.errors.join("; "));
   const result={
-    status:"complete",
+    status:attachmentSummary&&!attachmentSummary.complete?"partial":"complete",
     account:{corpName:manifest.account?.corpName||account.corpName,userName:manifest.account?.userName||account.userName,profile:account.profile},
     range:{from:manifest.query.from,to:manifest.query.to,roles:manifest.query.roles},
     roleCounts:Object.fromEntries(Object.entries(manifest.sources||{}).map(([key,value])=>[key,value.count])),
     records:manifest.uniqueInstances,
+    attachments:attachmentSummary,
     sheets:workbook.sheets.length,
     workbook:validation.workbook,
     archive:out,
@@ -164,7 +173,7 @@ export async function oneCommandExport(options){
 
 if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href){
   try{
-    const options=args(process.argv.slice(2),["out","from","to","roles","profile","runtime","dws","device","skip-install","help"],["device","skip-install","help"]);
+    const options=args(process.argv.slice(2),["out","from","to","roles","profile","runtime","dws","device","skip-install","attachments","max-attachment-bytes","max-total-attachment-bytes","help"],["device","skip-install","attachments","help"]);
     if(options.help)help();else await oneCommandExport(options);
   }catch(e){console.error(JSON.stringify({status:"failed",message:e.message}));process.exitCode=1;}
 }

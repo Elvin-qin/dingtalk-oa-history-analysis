@@ -5,9 +5,10 @@ import os from "node:os";
 import path from "node:path";
 import {collectWindow,decodePage,exportArchive} from "./export-oa-history.mjs";
 import {workbookModel,buildArchive} from "./build-workbook.mjs";
-import {writeJson,readJson,checkedPayload,validDate} from "./common.mjs";
+import {writeJson,readJson,checkedPayload,validDate,sha} from "./common.mjs";
 import {selectProfile} from "./run.mjs";
 import {validateArchive} from "./validate-export.mjs";
+import {downloadAttachments,extractAttachments,safePart} from "./download-attachments.mjs";
 
 test("empty pages without hasMore terminate, malformed non-empty pages do not",()=>{
   const empty=decodePage({result:{values:[]}});
@@ -22,6 +23,39 @@ test("profile selection uses explicit or unique current identity",()=>{
   assert.equal(selectProfile(profiles).profile,"b:u2");
   assert.equal(selectProfile(profiles,"a:u1").profile,"a:u1");
   assert.throws(()=>selectProfile(profiles.map(p=>({...p,isCurrent:false}))));
+});
+test("attachment metadata becomes verified local files",async()=>{
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),"oa-attachments-"));
+  const attachment={spaceId:"123",fileId:"file-1",fileName:"报告?.txt",fileSize:7,fileType:"txt"};
+  const detail={status:"COMPLETED",formValueVOS:[
+    {name:"附件",value:JSON.stringify([attachment])},
+    {name:"图片",value:JSON.stringify(["https://static.dingtalk.com/media/example.jpg"])}
+  ]};
+  assert.equal(extractAttachments(detail).length,2);assert.equal(safePart("CON"),"_CON");
+  await writeJson(path.join(dir,"approvals.json"),[{processInstanceId:"fixture-attachment",listItem:{title:"测试用户提交的测试审批"},detail}]);
+  await writeJson(path.join(dir,"manifest.json"),{complete:true,uniqueInstances:1,details:1,failures:[],query:{}});
+  await writeJson(path.join(dir,"raw","details",sha("fixture-attachment")+".json"),{result:detail});
+  const calls=[];
+  const request=async argv=>{calls.push(argv);return argv.includes("download-url")?{result:{downloadUri:"https://download.example.test/report"}}:{success:true};};
+  let fetchCalls=0;const fetchImpl=async()=>{fetchCalls++;return new Response(Buffer.from("content"),{status:200,headers:{"content-length":"7"}});};
+  const summary=await downloadAttachments({dir,profile:"corp:user",request,fetchImpl,maxFileBytes:1024,maxTotalBytes:4096});
+  assert.equal(summary.total,2);assert.equal(summary.downloaded,2);assert.equal(summary.failed,0);
+  assert.equal(calls.filter(v=>v.includes("authorize-download")).length,1);
+  assert.equal(calls.filter(v=>v.includes("download-url")).length,1);
+  const archive=await readJson(path.join(dir,"attachments.json"));
+  for(const item of archive.attachments)assert.equal((await fs.readFile(path.join(dir,item.localPath),"utf8")),"content");
+  const model=workbookModel(await readJson(path.join(dir,"approvals.json")),await readJson(path.join(dir,"manifest.json")));
+  assert.ok(model.some(sheet=>sheet.name==="附件汇总"));
+  await writeJson(path.join(dir,"approvals.json"),[{processInstanceId:"fixture-attachment",listItem:{title:"测试用户提交的测试审批"},detail}]);
+  const callCount=calls.length,fetchCount=fetchCalls;
+  const resumed=await downloadAttachments({dir,profile:"corp:user",request,fetchImpl,maxFileBytes:1024,maxTotalBytes:4096});
+  assert.equal(resumed.resumed,2);assert.equal(resumed.downloadedThisRun,0);
+  assert.equal(calls.length,callCount);assert.equal(fetchCalls,fetchCount);
+  if(process.env.OA_TEST_MODULES){
+    await buildArchive({dir,modules:process.env.OA_TEST_MODULES,engine:"artifact"});
+    const validation=await validateArchive(dir);
+    assert.deepEqual(validation.errors,[]);assert.equal(validation.attachments,2);assert.equal(validation.attachmentsComplete,true);
+  }
 });
 test("date split retains every parent ID",async()=>{
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),"oa-split-")),manifest={pages:0,segments:[]};
