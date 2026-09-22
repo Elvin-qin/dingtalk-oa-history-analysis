@@ -1,6 +1,6 @@
 # 工作簿与校验
 
-默认 artifact-tool。Skill 不携带商业运行时；没有该运行时的独立电脑使用公开 npm 包 ExcelJS。
+一键入口默认使用公开 npm 包 ExcelJS，保证 macOS 与 Windows 使用同一条命令。Codex 宿主需要额外渲染预览或精细检查时可使用 artifact-tool。
 
 ## Codex
 
@@ -31,4 +31,3 @@ node "<SKILL_ROOT>/scripts/validate-export.mjs" --dir "<ARCHIVE_DIR>"
 校验唯一 ID、数量、原始详情一致性、complete 和文件哈希。哈希/ZIP 头仅验证文件一致性，不能代替 Excel 或渲染器回读。
 
 参考：https://github.com/exceljs/exceljs
-

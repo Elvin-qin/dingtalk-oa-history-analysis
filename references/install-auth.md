@@ -1,12 +1,12 @@
 # 安装与认证
 
-运行 doctor 检查 OS、架构、Node、DWS 路径和版本。加 --account 才查询账户。支持 --dws 和 --runtime，均用加引号的绝对路径。
+默认直接运行 `node "<SKILL_ROOT>/scripts/run.mjs"`。入口自动检查 DWS 与 ExcelJS，缺失时安装到独立 runtime；登录失效时启动官方 OAuth，并在登录完成后继续导出。下面内容仅用于一键入口失败时排错。
 
 ## macOS 优先
 
 复用宿主提供的 Node；独立环境使用受支持的 Node LTS，本脚本要求 Node 20 或更高。缺少 Node 时，已有 Homebrew 可用 `brew install node`；否则从 https://nodejs.org/en/download 使用官方 macOS 安装包。不要仅为本任务安装整个 Homebrew。
 
-doctor 输出 runtime 目录，默认用户 Library/Caches/dingtalk-oa-history-analysis/runtime。首次固定安装已验证 CLI：
+runtime 默认位于用户 Library/Caches/dingtalk-oa-history-analysis/runtime。一键入口固定安装已验证 CLI：
 `npm install --prefix "<RUNTIME_DIR>" --save-exact dingtalk-workspace-cli@1.0.62`
 
 原生 DWS 位于 runtime/node_modules/dingtalk-workspace-cli/vendor/dws。现有其它版本先查当前 leaf Schema，支持所需接口便可复用，不强制降级。
@@ -16,7 +16,7 @@ doctor 输出 runtime 目录，默认用户 Library/Caches/dingtalk-oa-history-a
 复用现有 Node；缺失时从官网安装，或运行：
 `winget install --id OpenJS.NodeJS.LTS --exact --source winget`
 
-默认 runtime 位于用户 LOCALAPPDATA/dingtalk-oa-history-analysis/runtime。PowerShell 安装：
+默认 runtime 位于用户 LOCALAPPDATA/dingtalk-oa-history-analysis/runtime。一键入口会完成以下等价安装：
 `npm.cmd install --prefix "<RUNTIME_DIR>" --save-exact dingtalk-workspace-cli@1.0.62`
 
 传入真实 runtime/node_modules/dingtalk-workspace-cli/vendor/dws.exe，避免 cmd.exe 二次解释参数。PowerShell 直接运行可执行文件时使用 `& "<DWS_EXE>" auth login --format json`。不用为此永久修改执行策略。

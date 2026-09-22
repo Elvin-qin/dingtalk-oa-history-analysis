@@ -1,6 +1,6 @@
 interface:
   display_name: "钉钉 OA 历史审批归档"
-  short_description: "从 CLI 安装登录到审批分类导出，支持 macOS、Windows 和中断续传"
-  default_prompt: "使用 $dingtalk-oa-history-analysis 检查钉钉环境，将我的历史审批按类型整理为 XLSX。"
+  short_description: "自动准备环境，登录一次后分类统计并导出历史 OA 审批"
+  default_prompt: "使用 $dingtalk-oa-history-analysis 自动准备环境；只在需要时让我登录钉钉，然后导出全部历史审批并给我 XLSX 结果。"
 policy:
   allow_implicit_invocation: true

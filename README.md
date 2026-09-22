@@ -1,6 +1,6 @@
 # DingTalk OA History Analysis
 
-一个可分享的 Codex Skill：安装和检查钉钉 DWS CLI，引导用户完成自己的登录与授权，并把本人发起、处理过或收到抄送的历史 OA 审批按类型整理成 XLSX。
+一个可分享的 Codex Skill：自动准备钉钉 DWS 环境，只让用户完成必要的钉钉登录，然后把本人发起、处理过或收到抄送的历史 OA 审批分类统计并导出为 XLSX。
 
 macOS 是主要验证环境，Windows 使用同一套 Node.js 脚本。仓库不包含作者的钉钉账号、Token、审批数据或其他私人文件。
 
@@ -20,29 +20,52 @@ Windows PowerShell：
 git clone https://github.com/hanlilajiaochaorou/dingtalk-oa-history-analysis.git "$env:USERPROFILE\.codex\skills\dingtalk-oa-history-analysis"
 ```
 
-重新打开 Codex 后，可以这样调用：
+重新打开 Codex 后，只需要说：
 
 ```text
-使用 $dingtalk-oa-history-analysis 检查钉钉环境，将我的历史审批按类型整理为 XLSX。
+使用 $dingtalk-oa-history-analysis 导出我的全部历史审批，只在需要时让我登录钉钉，完成后直接给我 XLSX。
 ```
 
-## 能做什么
+执行过程默认只有：
 
-- 检查 Node.js、DWS CLI、登录状态和钉钉身份。
-- 按 `submitted`、`executed`、`cc` 三种角色抓取历史审批。
-- 保存可续传、可离线重建的原始数据。
-- 生成总览、全量索引和按审批模板分类的多个 Sheet。
-- 校验分页、详情缺失、失败项和导出完整性。
+1. Agent 自动检查并安装所需运行环境。
+2. 如果登录失效，用户在钉钉官方页面扫码确认一次。
+3. Agent 自动导出、生成、校验并返回 `钉钉历史审批.xlsx`。
+
+不会要求用户手工执行 doctor、export、build、validate 等多条命令，也不会默认先跑 mock 测试。
+
+## 直接运行
+
+已经下载仓库并装有 Node.js 20 或更高版本时，也可以运行同一个跨平台入口：
+
+```bash
+node scripts/run.mjs
+```
+
+Windows PowerShell：
+
+```powershell
+node "C:\skill\dingtalk-oa-history-analysis\scripts\run.mjs"
+```
+
+入口会自动安装 DWS CLI 和 ExcelJS。默认结果保存在用户 `Documents/DingTalkOAArchive` 下的新目录。指定范围或目录时使用：
+
+```bash
+node scripts/run.mjs --from 2025-01-01 --to 2025-12-31 --roles executed --out "/path/to/archive"
+```
+
+同一输出目录发生中断时，原命令重跑即可自动续传。
+
+## 输出
+
+- `钉钉历史审批.xlsx`：总览、全部审批索引和每种审批一个 Sheet。
+- `approvals.json`：去重后的结构化审批数据。
+- `manifest.json`：查询身份、范围、分页和完整性记录。
+- `raw/`：可核查、可恢复的原始响应。
 
 审批同意、拒绝、撤销、转交，以及日历或提醒同步不在这个 Skill 的范围内。
 
-## 环境
-
-- Node.js 20 或更高版本
-- 钉钉 DWS CLI；Skill 可以按需安装已验证版本
-- 用户自己的钉钉登录和相应企业权限
-
-具体流程见 [SKILL.md](SKILL.md)，安装与认证细节见 [references/install-auth.md](references/install-auth.md)。
+唯一需要预先具备的是 Node.js 20 或更高版本。DWS CLI、ExcelJS 和钉钉身份由一键入口处理。具体规则见 [SKILL.md](SKILL.md)。
 
 ## 隐私
 

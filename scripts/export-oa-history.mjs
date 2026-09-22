@@ -7,7 +7,12 @@ export const roles={submitted:"我发起",executed:"我处理",cc:"抄送我"};
 const listCommands={submitted:"list-submitted",executed:"list-executed",cc:"list-cc"};
 export function decodePage(payload) {
   const result=payload?.result;
-  if(!result || typeof result.hasMore!=="boolean" || !Array.isArray(result.values)) throw Error("Invalid list structure: expected result.values[] and boolean hasMore");
+  if(!result || !Array.isArray(result.values)) throw Error("Invalid list structure: expected result.values[]");
+  if(result.hasMore==null) {
+    if(result.values.length) throw Error("Invalid list structure: non-empty page is missing boolean hasMore");
+    return {...result,hasMore:false,_inferredTerminal:true};
+  }
+  if(typeof result.hasMore!=="boolean") throw Error("Invalid list structure: expected boolean hasMore");
   for(const row of result.values) if(!row || !row.processInstanceId) throw Error("List entry is missing processInstanceId");
   return result;
 }
@@ -28,9 +33,9 @@ export async function collectWindow({role,start,end,request,dir,manifest,pageSiz
     if(result.values.length && !fresh.length) throw Error("Pagination repeated a page without new instances: "+key);
     result.values.forEach(v=>seen.add(String(v.processInstanceId)));
     parentRows.push(...result.values);
-    console.log(JSON.stringify({phase:"list",role,from:start,to:end,page,count:parentRows.length,hasMore:result.hasMore}));
+    console.log(JSON.stringify({phase:"list",role,from:start,to:end,page,count:parentRows.length,hasMore:result.hasMore,inferredTerminal:Boolean(result._inferredTerminal)}));
     if(!result.hasMore) {
-      manifest.segments.push({role,from:start,to:end,pages:page,count:parentRows.length,complete:true});
+      manifest.segments.push({role,from:start,to:end,pages:page,count:parentRows.length,complete:true,inferredTerminal:Boolean(result._inferredTerminal)});
       return parentRows;
     }
     if(page>=splitAfter) {

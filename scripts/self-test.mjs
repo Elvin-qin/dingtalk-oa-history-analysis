@@ -6,12 +6,22 @@ import path from "node:path";
 import {collectWindow,decodePage,exportArchive} from "./export-oa-history.mjs";
 import {workbookModel,buildArchive} from "./build-workbook.mjs";
 import {writeJson,readJson,checkedPayload,validDate} from "./common.mjs";
+import {selectProfile} from "./run.mjs";
+import {validateArchive} from "./validate-export.mjs";
 
-test("invalid responses cannot become complete empty pages",()=>{
-  assert.throws(()=>decodePage({result:{values:[]}}));
+test("empty pages without hasMore terminate, malformed non-empty pages do not",()=>{
+  const empty=decodePage({result:{values:[]}});
+  assert.equal(empty.hasMore,false);assert.equal(empty._inferredTerminal,true);
+  assert.throws(()=>decodePage({result:{values:[{processInstanceId:"a"}]}}));
   assert.throws(()=>decodePage({result:{values:null,hasMore:false}}));
   assert.throws(()=>checkedPayload('{"success":false,"result":{}}'));
   assert.throws(()=>validDate("2025-02-30"));
+});
+test("profile selection uses explicit or unique current identity",()=>{
+  const profiles=[{profile:"a:u1",corpName:"A"},{profile:"b:u2",corpName:"B",isCurrent:true}];
+  assert.equal(selectProfile(profiles).profile,"b:u2");
+  assert.equal(selectProfile(profiles,"a:u1").profile,"a:u1");
+  assert.throws(()=>selectProfile(profiles.map(p=>({...p,isCurrent:false}))));
 });
 test("date split retains every parent ID",async()=>{
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),"oa-split-")),manifest={pages:0,segments:[]};
@@ -42,6 +52,9 @@ test("dedupe, missing detail supplements, resume, and archive binding",async()=>
   if(process.env.OA_TEST_MODULES){
     await buildArchive({dir,modules:process.env.OA_TEST_MODULES,engine:"artifact",preview:true});
     assert.ok((await fs.stat(path.join(dir,"钉钉历史审批.xlsx"))).size>1000);
+    const validation=await validateArchive(dir);
+    assert.deepEqual(validation.errors,[]);
+    assert.equal(validation.records,1);
     console.log("FIXTURE_ARCHIVE="+dir);
   }
 });
@@ -55,4 +68,3 @@ test("long raw strings split without loss; Shanghai dates and sheet collisions",
   const data=headers.map((h,i)=>h.startsWith("字段：长文本")?values[i]:"").join("");
   assert.equal(data,raw);assert.ok(values.every(v=>typeof v!=="string"||v.length<=32767));
 });
-
