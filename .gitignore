@@ -1,0 +1,15 @@
+node_modules/
+runtime/
+exports/
+raw/
+qa/
+*.xlsx
+*.xlsx.*
+.env
+.env.*
+.dws/
+*auth*.tar.gz
+.run-lock
+.DS_Store
+*.tmp
+
