@@ -8,5 +8,5 @@
 
 下载者将整个目录放到其 Agent 支持的 Skill 目录，或明确让支持路径读取的 Agent 读取 SKILL.md。下载不会自动安装依赖或授予企业访问权限，仍需自己的 Node/DWS 和钉钉登录。源码文件没有作者账号和凭据。
 
-本项目的公开仓库为 https://github.com/hanlilajiaochaorou/dingtalk-oa-history-analysis 。发布新版本前仍需逐项确认没有真实审批数据或认证信息。
+本项目的公开仓库为 https://github.com/Elvin-qin/dingtalk-oa-history-analysis 。发布新版本前仍需逐项确认没有真实审批数据或认证信息。
 https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/managing-repository-settings/setting-repository-visibility

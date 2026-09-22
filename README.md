@@ -11,13 +11,13 @@ macOS 是主要验证环境，Windows 使用同一套 Node.js 脚本。仓库不
 macOS / Linux：
 
 ```bash
-git clone git@github.com:hanlilajiaochaorou/dingtalk-oa-history-analysis.git ~/.codex/skills/dingtalk-oa-history-analysis
+git clone git@github.com:Elvin-qin/dingtalk-oa-history-analysis.git ~/.codex/skills/dingtalk-oa-history-analysis
 ```
 
 Windows PowerShell：
 
 ```powershell
-git clone https://github.com/hanlilajiaochaorou/dingtalk-oa-history-analysis.git "$env:USERPROFILE\.codex\skills\dingtalk-oa-history-analysis"
+git clone https://github.com/Elvin-qin/dingtalk-oa-history-analysis.git "$env:USERPROFILE\.codex\skills\dingtalk-oa-history-analysis"
 ```
 
 重新打开 Codex 后，只需要说：
