@@ -23,7 +23,7 @@ runtime 默认位于用户 Library/Caches/dingtalk-oa-history-analysis/runtime�
 
 ## 安装影响
 
-安装前说明版本、路径，沿用已有安装授权，按宿主权限执行。npm postinstall 可能安装或更新各 Agent 的钉钉产品 Skills，并保存备份；--prefix 不保证零其它目录改动。不要重设 HOME/CODEX_HOME 来规避行为。只使用官方来源；升级已有工具须有业务理由或用户要求。
+安装前说明版本、路径，沿用已有安装授权，按宿主权限执行。npm postinstall 可能安装或更新各 Agent 的钉钉产品 Skills，并保存备份；--prefix 不保证零其它目录改动。不要重设 HOME 或其他宿主配置目录来规避行为。只使用官方来源；升级已有工具须有业务理由或用户要求。
 
 官方：
 https://github.com/DingTalk-Real-AI/dingtalk-workspace-cli/blob/main/README_zh.md

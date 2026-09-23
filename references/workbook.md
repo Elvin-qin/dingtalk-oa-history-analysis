@@ -1,8 +1,8 @@
 # 工作簿与校验
 
-一键入口默认使用公开 npm 包 ExcelJS，保证 macOS 与 Windows 使用同一条命令。Codex 宿主需要额外渲染预览或精细检查时可使用 artifact-tool。
+一键入口默认使用公开 npm 包 ExcelJS，保证 macOS 与 Windows 使用同一条命令。具备 artifact-tool 的宿主需要额外渲染预览或精细检查时可以使用该工具。
 
-## Codex
+## 精细预览
 
 从宿主依赖加载工具取得 Node、node_modules 路径。遵守可用的 Spreadsheets skill：使用宿主运行时、按要求标记操作、重算、检查和渲染。
 ```text

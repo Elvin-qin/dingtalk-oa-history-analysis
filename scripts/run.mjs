@@ -165,7 +165,17 @@ export async function oneCommandExport(options){
     sheets:workbook.sheets.length,
     workbook:validation.workbook,
     archive:out,
-    validated:true
+    validated:true,
+    nextActions:[
+      "按审批类型、日期、角色、状态、发起人或部门筛选数据",
+      "统计审批数量、金额、处理时长和变化趋势",
+      "下载并整理指定审批或全部审批的附件",
+      "从 PDF、Word、Excel、文本或图片附件中查找文字与数据",
+      "将附件提取结果关联回审批实例、类型、发起人和文件名",
+      "基于已有归档生成自定义 Excel、汇总表、明细表或分析报告",
+      "继续中断任务，只补充尚未完成的审批或附件",
+      "继续提出其他筛选、统计、核对或输出要求"
+    ]
   };
   console.log(JSON.stringify(result,null,2));
   return result;
